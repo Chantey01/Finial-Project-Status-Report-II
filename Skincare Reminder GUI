@@ -1,0 +1,164 @@
+import tkinter as tk
+from datetime import datetime
+from tkinter import messagebox
+import threading
+# dont forgrt to create a customers contact form
+# My products and descriptions for each skin type
+skin_data = {
+    "Dry": {
+        "products": ["Product 1 for Dry Skin", "Product 2 for Dry Skin", "Product 3 for Dry Skin"], # each product will have a image displayed
+        "description": "Dry skin lacks moisture and often feels tight and rough. It may have a dull appearance, flaky patches, and fine lines. Dry skin is prone to irritation and can be sensitive to certain products or weather conditions.",
+        "schedule": "Wash your face with a mild, hydrating cleanser once a day, preferably in the evening. Follow up with a moisturizer to replenish moisture."
+    },
+    "Oily": {
+        "products": ["Product 1 for Oily Skin", "Product 2 for Oily Skin", "Product 3 for Oily Skin"],
+        "description": "Oily skin produces excess sebum, resulting in a shiny, greasy appearance. It often has enlarged pores and is prone to acne, blackheads, and other blemishes. Oily skin can be challenging to manage and may require regular cleansing and oil-controlling products.",
+        "schedule": "Wash your face with a gentle cleanser twice a day, once in the morning and once before bed. Use oil-free products and blotting papers throughout the day to control shine."
+    },
+    "Combination": {
+        "products": ["Product 1 for Combination Skin", "Product 2 for Combination Skin", "Product 3 for Combination Skin"],
+        "description": "Combination skin is characterized by having both oily and dry areas. Typically, the T-zone (forehead, nose, and chin) tends to be oilier, while the cheeks and other areas are drier. Combination skin requires a balanced skincare routine that addresses the needs of both dry and oily areas.",
+        "schedule": "Wash your face with a gentle cleanser twice a day, once in the morning and once before bed. Focus on oil-controlling products for the T-zone and hydrating products for the drier areas."
+    },
+    "Sensitive": {
+        "products": ["Product 1 for Sensitive Skin", "Product 2 for Sensitive Skin", "Product 3 for Sensitive Skin"],
+        "description": "Sensitive skin is easily irritated and reactive to various factors such as certain ingredients, environmental conditions, or even physical touch. It may appear red, inflamed, or itchy. Sensitive skin requires gentle and hypoallergenic products to minimize the risk of irritation.",
+        "schedule": "Wash your face with a mild, fragrance-free cleanser twice a day, once in the morning and once before bed. Avoid harsh scrubs or irritating ingredients."
+    }
+}
+
+# Thia function will display a reminder based on the selected skin type
+def display_reminder(skin_type):
+    reminder_message = skin_data[skin_type]["schedule"]
+    reminder_window = tk.Toplevel(root)
+    reminder_window.title("Skincare Reminder")
+
+    reminder_label = tk.Label(reminder_window, text=reminder_message, anchor='center')
+    reminder_label.pack()
+
+# Function to open the product window based on the selected skin type
+def open_product_window(skin_type):
+    # This new window for displaying the products, description, and schedule
+    product_window = tk.Toplevel(root)
+    product_window.title("Products for {} Skin".format(skin_type))
+
+    # label that display the skin type
+    skin_label = tk.Label(product_window, text="Skin Type: {}".format(skin_type))
+    skin_label.pack()
+
+    # label that display the products
+    products_label = tk.Label(product_window, text="Products:")
+    products_label.pack()
+
+    # my listbox that display the products
+    product_listbox = tk.Listbox(product_window)
+    product_listbox.pack()
+
+    # Add the products to the listbox
+    for product in skin_data[skin_type]["products"]:
+        product_listbox.insert(tk.END, product)
+
+    # label to display the description
+    description_label = tk.Label(product_window, text="Description:")
+    description_label.pack()
+
+    # My label that displays the description details
+    description_details_label = tk.Label(product_window, text=skin_data[skin_type]["description"])
+    description_details_label.pack(pady=5)
+
+    # This function will open the skincare schedule window and set the reminder
+    def open_schedule_window():
+        schedule_window = tk.Toplevel(product_window)
+        schedule_window.title("Daily Skincare Schedule for {} Skin".format(skin_type))
+
+        # Display of the skincare schedule
+        schedule_label = tk.Label(schedule_window, text="Skincare Schedule:")
+        schedule_label.pack()
+
+        # label to display the schedule details
+        schedule_details_label = tk.Label(schedule_window, text=skin_data[skin_type]["schedule"])
+        schedule_details_label.pack(pady=5)
+
+        # Function to set the daily reminder
+        def set_reminder():
+            reminder_window = tk.Toplevel(schedule_window)
+            reminder_window.title("Set Daily Reminder")
+
+            date_label = tk.Label(reminder_window, text="Date (MM-DD):")
+            date_label.pack()
+            date_entry = tk.Entry(reminder_window)
+            date_entry.pack()
+
+            time_label = tk.Label(reminder_window, text="Time (HH:MM):")
+            time_label.pack()
+            time_entry = tk.Entry(reminder_window)
+            time_entry.pack()
+
+            # radio buttons for AM and PM selection
+            am_pm_frame = tk.Frame(reminder_window)
+            am_pm_frame.pack(pady=5)
+
+            am_var = tk.StringVar(value="AM")
+            am_button = tk.Radiobutton(am_pm_frame, text="AM", variable=am_var, value="AM")
+            am_button.pack(side=tk.LEFT)
+
+            pm_var = tk.StringVar(value="PM")
+            pm_button = tk.Radiobutton(am_pm_frame, text="PM", variable=pm_var, value="PM")
+            pm_button.pack(side=tk.LEFT)
+
+            # Function to handle setting the reminder
+            def set_reminder_handler():
+                date = date_entry.get()
+                time = time_entry.get()
+                am_pm = am_var.get()
+                reminder_datetime = datetime.strptime(date + " " + time + " " + am_pm, "%m-%d %I:%M %p")
+                current_datetime = datetime.now()
+
+                # Calculate the time delta between current time and reminder time
+                time_delta = reminder_datetime - current_datetime
+
+                # Check if the reminder time has already passed for today
+                if time_delta.total_seconds() < 0:
+                    messagebox.showerror("Invalid Reminder", "The reminder time has already passed for today.")
+                    return
+
+                # Calculate the time until the next reminder in seconds
+                reminder_interval = time_delta.total_seconds()
+
+                # Start a new thread to wait for the reminder time
+                threading.Timer(reminder_interval, lambda: display_reminder(skin_type)).start()
+                messagebox.showinfo("Reminder Set", "Daily reminder has been set.")
+
+            # The button to set the reminder
+            set_reminder_button = tk.Button(reminder_window, text="Set Reminder", command=set_reminder_handler)
+            set_reminder_button.pack(pady=5)
+
+        # The button to set the daily reminder
+        reminder_button = tk.Button(schedule_window, text="Set Daily Reminder", command=set_reminder)
+        reminder_button.pack(pady=5)
+
+    # The button to open the skincare schedule window
+    schedule_button = tk.Button(product_window, text="View your Skincare Schedule", command=open_schedule_window)
+    schedule_button.pack(pady=5)
+
+# the main window
+root = tk.Tk()
+root.title("Skin Type Selector")
+
+# The buttons for each skin type with descriptions
+button_data = [
+    ("Dry", "Dry skin lacks moisture and often feels tight and rough."),
+    ("Oily", "Oily skin produces excess sebum, resulting in a shiny, greasy appearance."),
+    ("Combination", "Combination skin is characterized by having both oily and dry areas."),
+    ("Sensitive", "Sensitive skin is easily irritated and reactive to various factors.")
+]
+
+for skin_type, description in button_data:
+    button = tk.Button(root, text=skin_type, command=lambda skin_type=skin_type: open_product_window(skin_type))
+    button.pack(pady=5)
+
+    desc_label = tk.Label(root, text=description)
+    desc_label.pack()
+
+# The main event loop
+root.mainloop()
